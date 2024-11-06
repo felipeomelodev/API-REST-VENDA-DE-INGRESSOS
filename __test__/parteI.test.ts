@@ -1,4 +1,4 @@
-import criptografarSenha from "../src/auxiliares/criptografia";
+import criptografarSenha from "../src/auxiliares/criptografia"
 
 describe("Criptografia de senha", () => {
   test("deve retornar a senha criptografada em caso numérico", () => {
