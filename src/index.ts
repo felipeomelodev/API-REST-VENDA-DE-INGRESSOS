@@ -1,5 +1,7 @@
+import 'dotenv/config'
 import app from "./app";
 
-const PORTA = process.env.PORTA;
-
-app.listen(PORTA, () => console.log(`API rodando na porta ${PORTA}`));
+app.listen(process.env.PORT, () => {
+    console.log('Servidor inicializado!');
+    
+})
