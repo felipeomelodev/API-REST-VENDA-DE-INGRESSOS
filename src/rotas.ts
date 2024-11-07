@@ -1,12 +1,14 @@
 import { Request, Response, Router } from "express"
 import bancoDeDados from "./bancoDeDados"
 import TEvento from "./tipos/Evento"
+import autenticar from "./middlewares/autenticarLogin"
+import { v4 as uuidv4 } from 'uuid'
 
 const rotas = Router()
 
 rotas.get("/", (req: Request, res: Response) => {
     res.status(200).json({
-        mensagem: "API de vendas de ingressos!"
+        mensagem: "API de vendas de ingressos"
     })
 })
 
@@ -20,19 +22,49 @@ rotas.get("/eventos", (req: Request, res: Response) => {
 
     const maxPrecoInt = parseInt(maxPreco.toString(), 10)
 
-    if (isNaN(parseInt(maxPreco.toString(), 10)) || maxPrecoInt < 0) {
+    if (isNaN(maxPrecoInt) || maxPrecoInt < 0) {
         return res.status(400).json({
             mensagem: "O preço máximo do evento deve conter apenas números e deve ser positivo"
         })
     }
     
-    const response = bancoDeDados.eventos.filter((evento) => {
-        return evento.preco <= maxPrecoInt
-    })
+    const response = eventos.filter((evento) => evento.preco <= maxPrecoInt)
 
-    res.status(200).json(response)
+    return res.status(200).json(response)
 
 })
 
+rotas.post('/compras', autenticar, async (req: Request, res: Response) => {
+    const { idEvento } = req.body
+    const comprovante = req.query.comprovante as string
+  
+    if (!idEvento) {
+        return res.status(400).json({
+            mensagem: "O identificador do evento é obrigatório"
+        })
+}
+    const evento = bancoDeDados.eventos.find((evento) => evento.id === idEvento)
+
+    if (!evento) {
+        return res.status(404).json({ 
+            mensagem: "Evento não encontrado" })
+}
+const idUsuario = comprovante.split('/')[1]
+    if (!idUsuario) {
+        return res.status(401).json({
+            mensagem: "Falha na autenticação"
+        })
+    }
+
+    const novaCompra = {
+        id: uuidv4(),
+        id_usuario: idUsuario,
+        id_evento: idEvento
+    }
+
+    bancoDeDados.compras.push(novaCompra)
+
+    return res.status(201).json(novaCompra)
+})
 
 export default rotas
