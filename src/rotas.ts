@@ -30,7 +30,7 @@ rotas.get("/eventos", (req: Request, res: Response) => {
     
     const response = eventos.filter((evento) => evento.preco <= maxPrecoInt)
 
-    return res.status(200).json(response)
+    return res.status(400).json(response)
 
 })
 
@@ -65,6 +65,21 @@ const idUsuario = comprovante.split('/')[1]
     bancoDeDados.compras.push(novaCompra)
 
     return res.status(201).json(novaCompra)
+})
+
+rotas.get("/compras", autenticar, (req: Request, res: Response) => {
+    const { comprovante } = req.query as { comprovante : string}
+    const idUsuario = comprovante.split('/')[1]
+
+    const compras = bancoDeDados.compras.filter((compra => compra.id_usuario === idUsuario))
+
+    if (compras.length === 0) {
+        return res.status(404).json({
+            mensagem: "Compra não encontrada"
+        })
+    }
+
+    return res.status(200).json(compras)
 })
 
 export default rotas
