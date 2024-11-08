@@ -1,10 +1,50 @@
 import { Request, Response, Router } from "express"
 import bancoDeDados from "./bancoDeDados"
 import TEvento from "./tipos/Evento"
+import criptografarSenha from "./auxiliares/criptografia"
 import autenticar from "./middlewares/autenticarLogin"
 import { v4 as uuidv4 } from 'uuid'
 
 const rotas = Router()
+
+rotas.post("/usuarios", async (req: Request, res: Response) => {
+    const { nome, email, senha } = req.body
+
+    if (!nome || !email || !senha) {
+        return res.status(400).json({
+            mensagem: "Todos os campos são obrigatórios"
+        })
+    }
+
+    const usuarioExiste = bancoDeDados.usuarios.find((usuario) => usuario.email === email)
+    
+    if (usuarioExiste) {
+        return res.status(400).json({
+            mensagem: "E-mail já cadastrado"
+        })
+    }
+
+    const senhaCriptografada = criptografarSenha(senha)
+
+    const novoUsuario = {
+        id: uuidv4(),
+        nome,
+        email,
+        senha: senhaCriptografada
+    }
+
+    bancoDeDados.usuarios.push(novoUsuario)
+
+    const comprovante = `token/${novoUsuario.id}`
+
+    return res.status(201).json({
+        id: novoUsuario.id,
+        nome: novoUsuario.nome,
+        email: novoUsuario.email,
+        comprovante
+    })
+
+})
 
 rotas.get("/", (req: Request, res: Response) => {
     res.status(200).json({
