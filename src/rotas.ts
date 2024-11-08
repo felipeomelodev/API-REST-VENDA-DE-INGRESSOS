@@ -46,6 +46,36 @@ rotas.post("/usuarios", async (req: Request, res: Response) => {
 
 })
 
+rotas.post("/login", async (req: Request, res: Response) => {
+    const { email, senha } = req.body
+
+    if (!email || !senha) {
+        return res.status(400).json({
+            mensagem: "Todos os campos são obrigatórios"
+        })
+    }
+
+    const usuario = bancoDeDados.usuarios.find((usuario) => usuario.email === email)
+
+    if (!usuario) {
+        return res.status(400).json({
+            mensagem: "E-mail ou senha inválidos"
+        })
+    }
+
+    const senhaCriptografada = criptografarSenha(senha)
+
+    if (senhaCriptografada !== usuario.senha) {
+        return res.status(400).json({
+            mensagem: "E-mail ou senha inválidos"
+        })
+    }
+
+    res.status(200).json({
+        comprovante: `token/${usuario.id}`
+    })
+})
+
 rotas.get("/", (req: Request, res: Response) => {
     res.status(200).json({
         mensagem: "API de vendas de ingressos"
