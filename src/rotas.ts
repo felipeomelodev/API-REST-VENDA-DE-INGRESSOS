@@ -4,6 +4,8 @@ import TEvento from "./tipos/Evento"
 import criptografarSenha from "./auxiliares/criptografia"
 import autenticar from "./middlewares/autenticarLogin"
 import { v4 as uuidv4 } from 'uuid'
+import fraseSecreta from "./fraseSecreta"
+
 
 const rotas = Router()
 
@@ -35,13 +37,10 @@ rotas.post("/usuarios", async (req: Request, res: Response) => {
 
     bancoDeDados.usuarios.push(novoUsuario)
 
-    const comprovante = `token/${novoUsuario.id}`
-
     return res.status(201).json({
         id: novoUsuario.id,
         nome: novoUsuario.nome,
-        email: novoUsuario.email,
-        comprovante
+        email: novoUsuario.email
     })
 
 })
@@ -72,7 +71,7 @@ rotas.post("/login", async (req: Request, res: Response) => {
     }
 
     res.status(200).json({
-        comprovante: `token/${usuario.id}`
+        "comprovante": fraseSecreta + "/" + usuario.id
     })
 })
 
@@ -86,11 +85,11 @@ rotas.get("/eventos", (req: Request, res: Response) => {
     const { maxPreco } = req.query
     const eventos: TEvento[] = bancoDeDados.eventos
 
-    if (maxPreco == null) {
+    if (!maxPreco) {
         return res.status(200).json(eventos)
     }
 
-    const maxPrecoInt = parseInt(maxPreco.toString(), 10)
+    const maxPrecoInt = Number(maxPreco)
 
     if (isNaN(maxPrecoInt) || maxPrecoInt < 0) {
         return res.status(400).json({
@@ -98,9 +97,9 @@ rotas.get("/eventos", (req: Request, res: Response) => {
         })
     }
     
-    const response = eventos.filter((evento) => evento.preco <= maxPrecoInt)
+    const eventosFiltrados = eventos.filter((evento) => evento.preco <= maxPrecoInt)
 
-    return res.status(400).json(response)
+    return res.status(400).json(eventosFiltrados)
 
 })
 
@@ -149,7 +148,47 @@ rotas.get("/compras", autenticar, (req: Request, res: Response) => {
         })
     }
 
-    return res.status(200).json(compras)
+    const comprasDoUsuario = []
+
+    for (let compra of compras) {
+        const evento = bancoDeDados.eventos.find((evento) => evento.id === compra.id_evento) 
+
+        const comprasRetornadas = {
+        idCompra: compra.id,
+        idEvento: compra.id_evento,
+        nome: evento?.nome,
+        endereco: evento?.endereco,
+        data: evento?.data,
+        preco: evento?.preco
+    }
+
+    comprasDoUsuario.push(comprasRetornadas)
+
+    }
+
+
+    return res.status(200).json(comprasDoUsuario)
 })
+
+rotas.delete("/compras/:id", autenticar, async (req: Request, res: Response) => {
+    const { id } = req.params
+    const { comprovante } = req.query as { comprovante : string}
+    const idUsuario = comprovante.split('/')[1] 
+
+
+    
+    const compraIndex = bancoDeDados.compras.findIndex((compra => compra.id === id && compra.id_usuario === idUsuario))
+
+    if (compraIndex === -1) {
+        return res.status(404).json({
+            mensagem: "Compra não encontrada"
+        })
+    }
+
+    bancoDeDados.compras.splice(compraIndex, 1)
+
+    return res.status(204).send()
+})
+
 
 export default rotas
