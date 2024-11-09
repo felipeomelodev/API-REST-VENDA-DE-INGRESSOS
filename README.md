@@ -62,7 +62,7 @@ API_REST_VENDAS/
 
 ## Endpoints
 
-Aqui estão alguns dos principais endpoints implementados:
+Aqui estão os principais endpoints implementados:
 
 - `GET /` - Retorna uma mensagem.  
 - `GET /eventos?maxPreco=5000` - Lista todos os eventos cadastrados no banco de dados, caso filtro seja passado
